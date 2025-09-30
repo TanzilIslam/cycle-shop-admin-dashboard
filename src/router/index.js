@@ -16,16 +16,16 @@ const router = createRouter({
           component: () => import('../views/DashboardView.vue'),
           meta: { usedInSideNav: true, icon: 'mdi-view-dashboard', title: 'Dashboard' },
         },
-        {
-          path: 'shop',
-          name: 'shop',
-          component: () => import('../views/ShopView.vue'),
-          meta: {
-            usedInSideNav: true,
-            icon: 'mdi-store',
-            title: 'Shop',
-          },
-        },
+        // {
+        //   path: 'shop',
+        //   name: 'shop',
+        //   component: () => import('../views/ShopView.vue'),
+        //   meta: {
+        //     usedInSideNav: true,
+        //     icon: 'mdi-store',
+        //     title: 'Shop',
+        //   },
+        // },
         {
           path: 'brand',
           name: 'brand',
