@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { useEnquiryStore } from '@/stores/enquiry'
@@ -24,12 +24,7 @@ const isMobile = computed(() => {
 })
 
 onMounted(() => {
-  enquiryStore.subscribeToEnquiries()
   enquiryStore.fetchUnreadEnquiries()
-})
-
-onUnmounted(() => {
-  enquiryStore.unsubscribeFromEnquiries()
 })
 </script>
 
@@ -37,7 +32,7 @@ onUnmounted(() => {
   <v-app>
     <v-app-bar color="primary" density="compact">
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title>My Cycle Shop</v-toolbar-title>
+      <v-toolbar-title>Store Admin</v-toolbar-title>
       <v-spacer></v-spacer>
       <AppNotificationMenu />
       <v-btn icon="mdi-logout" @click="handleLogout"></v-btn>

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'vue-router'
+import { SHOP_TABLE } from '@/lib/dbTable'
 
 export const useUserStore = defineStore('user', () => {
   const router = useRouter()
@@ -21,6 +22,12 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  async function ensureShopExists(userId) {
+    await supabase
+      .from(SHOP_TABLE)
+      .upsert({ id: userId }, { onConflict: 'id', ignoreDuplicates: true })
+  }
+
   async function loginWithEmail(email, password) {
     loading.value = true
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -32,6 +39,7 @@ export const useUserStore = defineStore('user', () => {
     if (error) throw error
     user.value = data.user
     token.value = data.session?.access_token || null
+    await ensureShopExists(data.user.id)
   }
 
   async function logout() {

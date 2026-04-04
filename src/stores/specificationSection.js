@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { supabase } from '../lib/supabaseClient'
-import { SPECIFICATION_SECTION_TABLE } from '../lib/dbTable'
+import { SPECIFICATION_SECTION_TABLE } from '@/lib/dbTable'
 export const useSpecificationSectionStore = defineStore('specificationSection', () => {
   // State: stores the list of brands
   const specificationSections = ref([])

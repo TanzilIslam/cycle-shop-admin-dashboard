@@ -75,9 +75,6 @@ const headers = ref([
   { title: 'Email', key: 'email', sortable: true },
   { title: 'Phone', key: 'phone', sortable: true },
 
-  { title: 'Cycle', key: 'cycle_name' },
-
-  { title: 'Product Price', key: 'product_price' },
   { title: 'Message', key: 'message' },
 
   { title: 'Created At', key: 'created_at', sortable: true },

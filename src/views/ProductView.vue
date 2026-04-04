@@ -11,18 +11,8 @@
         clearable
         @update:modelValue="handleCategoryChange"
       ></v-select>
-      <v-select
-        max-width="200"
-        label="Brand Filter"
-        :items="brandStore.brands"
-        item-title="name"
-        item-value="id"
-        v-model="selectedBrand"
-        clearable
-        @update:modelValue="handleBrandChange"
-      ></v-select>
 
-      <v-btn color="primary" @click="$router.push({ name: 'cycle', query: { mode: 'form' } })"
+      <v-btn color="primary" @click="$router.push({ name: 'product', query: { mode: 'form' } })"
         >Add {{ moduleName }}</v-btn
       >
     </div>
@@ -32,7 +22,7 @@
           <v-btn
             size="x-small"
             icon
-            @click="$router.push({ name: 'cycle', query: { mode: 'form', id: item.id } })"
+            @click="$router.push({ name: 'product', query: { mode: 'form', id: item.id } })"
           >
             <v-icon size="15">mdi-pencil</v-icon>
           </v-btn>
@@ -63,17 +53,6 @@
               <v-row>
                 <v-col cols="12" md="6">
                   <v-select
-                    label="Select Brand"
-                    :items="brandStore.brands"
-                    item-title="name"
-                    item-value="id"
-                    v-model="formData.brand_id"
-                    :rules="[requiredRule]"
-                    required
-                  ></v-select>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-select
                     label="Select Category"
                     :items="categoryStore.categories"
                     item-title="name"
@@ -85,8 +64,8 @@
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
-                    label="Model Name"
-                    v-model="formData.model_name"
+                    label="Name"
+                    v-model="formData.name"
                     :rules="[requiredRule]"
                     required
                   ></v-text-field>
@@ -108,12 +87,17 @@
                     required
                   ></v-text-field>
                 </v-col>
+                <v-col cols="12" md="6">
+                  <v-switch
+                    label="Active"
+                    v-model="formData.is_active"
+                    color="primary"
+                  ></v-switch>
+                </v-col>
                 <v-col cols="12">
                   <v-textarea
                     label="Description"
                     v-model="formData.description"
-                    :rules="[requiredRule]"
-                    required
                     rows="10"
                   ></v-textarea>
                 </v-col>
@@ -123,46 +107,62 @@
             <v-tabs-window-item value="gallery">
               <v-row class="pb-4">
                 <v-col cols="12">
-                  <v-card class="pa-4 rounded-lg" height="100%">
-                    <div class="d-flex ga-2 overflow-y-auto flex-nowrap">
+                  <v-card class="pa-4 rounded-lg">
+                    <div class="d-flex ga-2 overflow-x-auto flex-nowrap mb-4">
                       <v-img
-                        v-for="(photo, index) in formData.photos"
+                        v-for="(image, index) in formData.images"
                         :key="index"
-                        :src="photo"
+                        :src="image"
                         height="200"
                         width="200"
-                        class="flex-1 shrink-0"
+                        class="flex-shrink-0"
                       />
                     </div>
-
                     <div class="d-flex justify-space-between mb-5">
-                      <p class="text-h5">Photos</p>
-                      <v-btn color="primary" @click="addPhoto" icon size="x-small">
+                      <p class="text-h5">Images</p>
+                      <v-btn color="primary" @click="addImage" icon size="x-small">
                         <v-icon size="18">mdi-plus</v-icon>
                       </v-btn>
                     </div>
-                    <v-row v-for="(photo, index) in formData.photos" :key="index">
-                      <v-col cols="10">
-                        <v-text-field v-model="formData.photos[index]" label="Photo"></v-text-field>
+                    <v-row v-for="(image, index) in formData.images" :key="index">
+                      <v-col cols="9">
+                        <v-text-field v-model="formData.images[index]" label="Image URL" hide-details></v-text-field>
                       </v-col>
-                      <v-col cols="2" class="text-right">
-                        <v-btn color="primary" @click="removePhoto(index)" icon size="x-small">
-                          <v-icon size="18">mdi-trash-can</v-icon>
+                      <v-col cols="3" class="d-flex ga-1 align-center justify-end">
+                        <v-btn
+                          color="primary"
+                          icon
+                          size="x-small"
+                          :loading="uploadingImageIndex === index"
+                          @click="triggerImageUpload(index)"
+                        >
+                          <v-icon size="15">mdi-upload</v-icon>
+                          <input
+                            :ref="el => imageInputs[index] = el"
+                            type="file"
+                            accept="image/*"
+                            class="d-none"
+                            @change="uploadImage($event, index)"
+                          />
+                        </v-btn>
+                        <v-btn color="error" @click="removeImage(index)" icon size="x-small">
+                          <v-icon size="15">mdi-trash-can</v-icon>
                         </v-btn>
                       </v-col>
                     </v-row>
+                    <p v-if="fileManager.error" class="text-error text-caption mt-1">{{ fileManager.error }}</p>
                   </v-card>
                 </v-col>
                 <v-col cols="12">
-                  <v-card class="pa-4 rounded-lg" height="100%">
-                    <div class="d-flex ga-2 overflow-y-auto flex-nowrap mb-5">
+                  <v-card class="pa-4 rounded-lg">
+                    <div class="d-flex ga-2 overflow-x-auto flex-nowrap mb-4">
                       <video
                         v-for="(video, index) in formData.videos"
                         :key="index"
                         :src="video"
-                        height="400"
-                        width="100%"
+                        height="200"
                         controls
+                        class="flex-shrink-0"
                       />
                     </div>
                     <div class="d-flex justify-space-between mb-5">
@@ -172,16 +172,32 @@
                       </v-btn>
                     </div>
                     <v-row v-for="(video, index) in formData.videos" :key="index">
-                      <v-col cols="10">
-                        <v-text-field v-model="formData.videos[index]" label="Video">
-                        </v-text-field>
+                      <v-col cols="9">
+                        <v-text-field v-model="formData.videos[index]" label="Video URL" hide-details></v-text-field>
                       </v-col>
-                      <v-col cols="2" class="text-right">
-                        <v-btn color="primary" @click="removeVideo(index)" icon size="x-small">
-                          <v-icon size="18">mdi-trash-can</v-icon>
+                      <v-col cols="3" class="d-flex ga-1 align-center justify-end">
+                        <v-btn
+                          color="primary"
+                          icon
+                          size="x-small"
+                          :loading="uploadingVideoIndex === index"
+                          @click="triggerVideoUpload(index)"
+                        >
+                          <v-icon size="15">mdi-upload</v-icon>
+                          <input
+                            :ref="el => videoInputs[index] = el"
+                            type="file"
+                            accept="video/*"
+                            class="d-none"
+                            @change="uploadVideo($event, index)"
+                          />
+                        </v-btn>
+                        <v-btn color="error" @click="removeVideo(index)" icon size="x-small">
+                          <v-icon size="15">mdi-trash-can</v-icon>
                         </v-btn>
                       </v-col>
                     </v-row>
+                    <p v-if="fileManager.error" class="text-error text-caption mt-1">{{ fileManager.error }}</p>
                   </v-card>
                 </v-col>
               </v-row>
@@ -190,54 +206,35 @@
             <v-tabs-window-item value="specification">
               <v-tabs v-model="specificationTab" class="mt-4">
                 <v-tab
-                  :value="specificationSection.id"
-                  v-for="specificationSection in specificationSectionStore.specificationSections"
-                  :key="specificationSection.id"
+                  :value="section.id"
+                  v-for="section in specificationSectionStore.specificationSections"
+                  :key="section.id"
                 >
-                  {{ specificationSection.name }}
+                  {{ section.name }}
                 </v-tab>
               </v-tabs>
               <v-tabs-window v-model="specificationTab">
                 <v-tabs-window-item
-                  :value="specificationSection.id"
-                  v-for="specificationSection in specificationSectionStore.specificationSections"
-                  :key="specificationSection.id"
+                  :value="section.id"
+                  v-for="section in specificationSectionStore.specificationSections"
+                  :key="section.id"
                 >
                   <v-card flat>
                     <v-card-text>
                       <v-row>
                         <v-col
-                          v-for="specKey in filteredSpecKeys(specificationSection.id)"
+                          v-for="specKey in filteredSpecKeys(section.id)"
                           :key="specKey.id"
                           cols="12"
                           sm="6"
                           md="4"
                         >
-                          <template v-if="specKey.data_type === 'text'">
-                            <v-text-field
-                              :label="specKey.name"
-                              v-model="specsData[specKey.id]"
-                              :placeholder="`Enter value for ${specKey.name}`"
-                              variant="outlined"
-                            ></v-text-field>
-                          </template>
-                          <template v-else-if="specKey.data_type === 'number'">
-                            <v-text-field
-                              :label="specKey.name"
-                              v-model="specsData[specKey.id]"
-                              :placeholder="`Enter value for ${specKey.name}`"
-                              variant="outlined"
-                            ></v-text-field>
-                          </template>
-                          <template v-else-if="specKey.data_type === 'select'">
-                            <v-select
-                              :label="specKey.name"
-                              v-model="specsData[specKey.id]"
-                              :placeholder="`Enter value for ${specKey.name}`"
-                              variant="outlined"
-                              :items="specKey.select_options?.split(',')"
-                            ></v-select>
-                          </template>
+                          <v-text-field
+                            :label="specKey.unit ? `${specKey.name} (${specKey.unit})` : specKey.name"
+                            v-model="specsData[specKey.id]"
+                            :placeholder="`Enter value for ${specKey.name}`"
+                            variant="outlined"
+                          ></v-text-field>
                         </v-col>
                       </v-row>
                     </v-card-text>
@@ -248,53 +245,48 @@
           </v-form>
         </v-tabs-window>
         <div class="d-flex justify-end">
-          <v-btn color="primary" @click="submitForm">Save</v-btn>
+          <v-btn color="primary" @click="submitForm" :loading="loading">Save</v-btn>
         </div>
       </v-col>
     </v-row>
   </template>
-  <template v-else-if="isDetailView"> Detail </template>
 </template>
 
 <script setup>
 import { onMounted, ref, computed, reactive } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { useCycleStore } from '@/stores/cycle'
+import { useProductStore } from '@/stores/product'
 import { useCategoryStore } from '@/stores/category'
-import { useBrandStore } from '@/stores/brand'
 import { useSpecificationSectionStore } from '@/stores/specificationSection'
 import { useSpecificationKeyStore } from '@/stores/specificationKey'
-import { useRouter } from 'vue-router'
-import { useRoute } from 'vue-router'
-import { VVideo } from 'vuetify/labs/VVideo'
+import { useFileManagerStore } from '@/stores/fileManager'
+import { useRouter, useRoute } from 'vue-router'
+import { CKEDITOR_STORAGE_BUCKET } from '@/lib/dbTable'
 
-import { BRAND_TABLE, CATEGORY_TABLE } from '@/lib/dbTable'
-
-const moduleName = 'Cycle'
+const moduleName = 'Product'
 
 const router = useRouter()
 const route = useRoute()
-const cycleStore = useCycleStore()
+const productStore = useProductStore()
 const categoryStore = useCategoryStore()
-const brandStore = useBrandStore()
 const specificationSectionStore = useSpecificationSectionStore()
 const appStore = useAppStore()
 const specificationKeyStore = useSpecificationKeyStore()
+const fileManager = useFileManagerStore()
 
 const isListView = computed(() => !route.query?.mode)
 const isCreateView = computed(() => route.query.mode === 'form' && !route.query.id)
 const isEditView = computed(() => route.query.mode === 'form' && route.query.id)
-const isDetailView = computed(() => route.query.mode === 'detail' && route.query.id)
 const resourceId = computed(() => route.query.id)
 
 const tab = ref('basic')
-const specificationTab = ref('basic')
+const specificationTab = ref(null)
 
 const headers = [
-  { title: 'Model Name', key: 'model_name' },
-  { title: 'Brand', key: `${BRAND_TABLE}.name` },
-  { title: 'Category', key: `${CATEGORY_TABLE}.name` },
-  { title: 'price', key: 'price' },
+  { title: 'Name', key: 'name' },
+  { title: 'Category', key: 'store_categories.name' },
+  { title: 'Price', key: 'price' },
+  { title: 'Active', key: 'is_active' },
   { title: 'Action', key: 'action' },
 ]
 
@@ -303,28 +295,26 @@ const requiredRule = (value) => !!value || 'This field is required.'
 const items = ref([])
 const filteredItems = ref([])
 const selectedCategory = ref(null)
-const selectedBrand = ref(null)
 const loading = ref(false)
 const form = ref(null)
 
 const filteredSpecKeys = computed(() => (sectionId) => {
   return specificationKeyStore.specificationKeys.filter(
-    (specKey) => specKey.spec_section_id === sectionId,
+    (specKey) => specKey.section_id === sectionId,
   )
 })
 
-const getInitialFormData = () => {
-  return {
-    brand_id: null,
-    category_id: null,
-    model_name: '',
-    slug: '',
-    price: 0,
-    description: '',
-    photos: [],
-    videos: [],
-  }
-}
+const getInitialFormData = () => ({
+  category_id: null,
+  name: '',
+  slug: '',
+  price: 0,
+  description: '',
+  images: [],
+  videos: [],
+  is_active: true,
+})
+
 const formData = ref(getInitialFormData())
 const specsData = reactive({})
 
@@ -335,118 +325,133 @@ const handleCategoryChange = (value) => {
     filteredItems.value = items.value
   }
 }
-const handleBrandChange = (value) => {
-  if (value) {
-    filteredItems.value = items.value.filter((item) => item.brand_id === value)
-  } else {
-    filteredItems.value = items.value
-  }
+
+const imageInputs = ref([])
+const videoInputs = ref([])
+const uploadingImageIndex = ref(null)
+const uploadingVideoIndex = ref(null)
+
+const addImage = () => formData.value.images.push('')
+const removeImage = (index) => formData.value.images.splice(index, 1)
+const addVideo = () => formData.value.videos.push('')
+const removeVideo = (index) => formData.value.videos.splice(index, 1)
+
+const triggerImageUpload = (index) => imageInputs.value[index]?.click()
+const triggerVideoUpload = (index) => videoInputs.value[index]?.click()
+
+const uploadImage = async (event, index) => {
+  const file = event.target.files[0]
+  if (!file) return
+  uploadingImageIndex.value = index
+  fileManager.error = null
+  const url = await fileManager.uploadFile(file, CKEDITOR_STORAGE_BUCKET)
+  if (url) formData.value.images[index] = url
+  uploadingImageIndex.value = null
+  event.target.value = ''
 }
-const addPhoto = () => {
-  formData.value.photos.push('')
+
+const uploadVideo = async (event, index) => {
+  const file = event.target.files[0]
+  if (!file) return
+  uploadingVideoIndex.value = index
+  fileManager.error = null
+  const url = await fileManager.uploadFile(file, CKEDITOR_STORAGE_BUCKET)
+  if (url) formData.value.videos[index] = url
+  uploadingVideoIndex.value = null
+  event.target.value = ''
 }
-const addVideo = () => {
-  formData.value.videos.push('')
-}
-const removePhoto = (index) => {
-  formData.value.photos.splice(index, 1)
-}
-const removeVideo = (index) => {
-  formData.value.videos.splice(index, 1)
-}
+
 const getFormattedSpecsData = () => {
   const formattedSpecs = []
   for (const specKeyId in specsData) {
     const value = specsData[specKeyId]
-    // Only include specs with a value
     if (value) {
-      formattedSpecs.push({
-        spec_key_id: specKeyId,
-        value: value,
-      })
+      formattedSpecs.push({ spec_key_id: specKeyId, value })
     }
   }
   return formattedSpecs
 }
+
 const submitForm = async () => {
   const { valid } = await form.value.validate()
   if (!valid) {
-    appStore.showSnackbar({
-      text: 'Please fill all required fields',
-      color: 'error',
-    })
+    appStore.showSnackbar({ text: 'Please fill all required fields', color: 'error' })
     return
   }
   loading.value = true
-  if (isCreateView.value) {
-    await cycleStore.create(formData.value)
-  } else if (isEditView.value) {
-    await cycleStore.update(resourceId.value, formData.value)
-    await cycleStore.removeCycleSpecs(resourceId.value)
-    const formattedSpecs = getFormattedSpecsData()
-    const specsPayload = formattedSpecs.map((spec) => ({
-      ...spec,
-      cycle_id: resourceId.value,
-    }))
-    await cycleStore.createCycleSpecs(specsPayload)
+  try {
+    if (isCreateView.value) {
+      await productStore.create(formData.value)
+    } else if (isEditView.value) {
+      await productStore.update(resourceId.value, formData.value)
+      await productStore.removeProductSpecs(resourceId.value)
+      const specsPayload = getFormattedSpecsData().map((spec) => ({
+        ...spec,
+        product_id: resourceId.value,
+      }))
+      if (specsPayload.length > 0) {
+        await productStore.createProductSpecs(specsPayload)
+      }
+    }
+    appStore.showSnackbar({ text: 'Product saved successfully', color: 'success' })
+    router.push({ name: 'product' })
+  } finally {
+    loading.value = false
   }
-  appStore.showSnackbar({
-    text: 'Cycle saved successfully',
-    color: 'success',
-  })
-  loading.value = false
-  router.push({ name: 'cycle' })
 }
+
 async function confirmDelete(item) {
   const confirmed = await appStore.showConfirmDialog({
-    title: 'Delete Cycle',
-    message: `Are you sure you want to delete "${item.model_name}"?`,
+    title: 'Delete Product',
+    message: `Are you sure you want to delete "${item.name}"?`,
     confirmText: 'Delete',
     cancelText: 'Cancel',
   })
 
   if (confirmed) {
     try {
-      await cycleStore.removeCycleSpecs(item.id)
-      await cycleStore.remove(item.id)
-      await fetchCycle()
+      await productStore.removeProductSpecs(item.id)
+      await productStore.remove(item.id)
+      await loadData()
       appStore.showSnackbar({ text: 'Deleted successfully' })
     } catch (err) {
-      appStore.handleError(err, 'delete cycle')
+      appStore.handleError(err, 'delete product')
     }
   }
 }
-const fetchCycle = async () => {
-  Promise.all([
-    cycleStore.fetchAll(),
+
+const loadData = async () => {
+  await Promise.all([
+    productStore.fetchAll(),
     categoryStore.fetchAll(),
-    brandStore.fetchAll(),
     specificationSectionStore.fetchAll(),
     specificationKeyStore.fetchAll(),
-  ]).then(() => {
-    items.value = cycleStore.cycles
-    filteredItems.value = cycleStore.cycles
-  })
+  ])
+  items.value = productStore.products
+  filteredItems.value = productStore.products
 }
 
 onMounted(async () => {
-  await fetchCycle()
-  if (isEditView.value || isDetailView.value) {
-    await cycleStore.fetchById(route.query.id)
-    formData.value.brand_id = cycleStore.cycle.brand_id
-    formData.value.category_id = cycleStore.cycle.category_id
-    formData.value.model_name = cycleStore.cycle.model_name
-    formData.value.slug = cycleStore.cycle.slug
-    formData.value.price = cycleStore.cycle.price
-    formData.value.description = cycleStore.cycle.description
-    formData.value.photos = cycleStore.cycle.photos
-    formData.value.videos = cycleStore.cycle.videos
+  await loadData()
+  if (isEditView.value) {
+    await productStore.fetchById(route.query.id)
+    const p = productStore.product
+    formData.value = {
+      category_id: p.category_id,
+      name: p.name,
+      slug: p.slug,
+      price: p.price,
+      description: p.description,
+      images: p.images ?? [],
+      videos: p.videos ?? [],
+      is_active: p.is_active,
+    }
 
-    await cycleStore.fetchCycleSpecs(route.query.id)
-
-    cycleStore.cycleSpecs.forEach((spec) => {
+    await productStore.fetchProductSpecs(route.query.id)
+    productStore.productSpecs.forEach((spec) => {
       specsData[spec.spec_key_id] = spec.value
     })
+
     if (specificationSectionStore.specificationSections.length > 0) {
       specificationTab.value = specificationSectionStore.specificationSections[0].id
     }

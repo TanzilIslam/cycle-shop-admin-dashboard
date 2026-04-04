@@ -16,25 +16,11 @@ const router = createRouter({
           component: () => import('../views/DashboardView.vue'),
           meta: { usedInSideNav: true, icon: 'mdi-view-dashboard', title: 'Dashboard' },
         },
-        // {
-        //   path: 'shop',
-        //   name: 'shop',
-        //   component: () => import('../views/ShopView.vue'),
-        //   meta: {
-        //     usedInSideNav: true,
-        //     icon: 'mdi-store',
-        //     title: 'Shop',
-        //   },
-        // },
         {
-          path: 'brand',
-          name: 'brand',
-          component: () => import('../views/BrandView.vue'),
-          meta: {
-            usedInSideNav: true,
-            icon: 'mdi-atlassian',
-            title: 'Brand',
-          },
+          path: 'shop',
+          name: 'shop',
+          component: () => import('../views/ShopView.vue'),
+          meta: { usedInSideNav: true, icon: 'mdi-store', title: 'My Shop' },
         },
         {
           path: 'category',
@@ -67,13 +53,13 @@ const router = createRouter({
           },
         },
         {
-          path: 'cycle',
-          name: 'cycle',
-          component: () => import('../views/CycleView.vue'),
+          path: 'product',
+          name: 'product',
+          component: () => import('../views/ProductView.vue'),
           meta: {
             usedInSideNav: true,
-            icon: 'mdi-bicycle',
-            title: 'Cycle',
+            icon: 'mdi-package-variant',
+            title: 'Product',
           },
         },
         {

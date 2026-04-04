@@ -1,4 +1,3 @@
-// src/stores/enquiryStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { supabase } from '@/lib/supabaseClient'
@@ -12,7 +11,6 @@ export const useEnquiryStore = defineStore('enquiry', () => {
   const totalItems = ref(0)
   const unreadEnquiries = ref([])
   const loading = ref(false)
-  let realtimeChannel = null
 
   const options = ref({
     page: 1,
@@ -43,7 +41,7 @@ export const useEnquiryStore = defineStore('enquiry', () => {
 
       if (options.value.search) {
         const searchStr = `%${options.value.search}%`
-        query = query.or(`customer_name.ilike.${searchStr},product_name.ilike.${searchStr}`)
+        query = query.or(`name.ilike.${searchStr},email.ilike.${searchStr}`)
       }
 
       if (options.value.sortBy && options.value.sortBy.length > 0) {
@@ -56,7 +54,7 @@ export const useEnquiryStore = defineStore('enquiry', () => {
       if (error) throw error
 
       items.value = data
-      totalItems.value = error ? 0 : data.length > 0 ? count : 0
+      totalItems.value = data.length > 0 ? count : 0
     } catch (e) {
       appStore.handleError(e)
       items.value = []
@@ -65,36 +63,7 @@ export const useEnquiryStore = defineStore('enquiry', () => {
       loading.value = false
     }
   }
-  function subscribeToEnquiries() {
-    if (realtimeChannel) return
 
-    realtimeChannel = supabase
-      .channel('public:pro_tech_enquiries')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: ENQUIRY_TABLE },
-        (payload) => {
-          items.value.unshift(payload.new)
-
-          appStore.showSnackbar({
-            text: `New enquiry from ${payload.new.customer_name} for ${payload.new.product_name}`,
-            color: 'success',
-            timeout: 10000,
-            closable: true,
-          })
-
-          const audio = new Audio('/notification.mp3')
-          audio.play()
-        },
-      )
-      .subscribe()
-  }
-  function unsubscribeFromEnquiries() {
-    if (realtimeChannel) {
-      supabase.removeChannel(realtimeChannel)
-      realtimeChannel = null
-    }
-  }
   async function fetchUnreadEnquiries() {
     loading.value = true
     try {
@@ -112,19 +81,17 @@ export const useEnquiryStore = defineStore('enquiry', () => {
       loading.value = false
     }
   }
+
   async function markAsRead(enquiry) {
     try {
-      // Optimistic update: remove from the UI immediately
       unreadEnquiries.value = unreadEnquiries.value.filter((e) => e.id !== enquiry.id)
 
-      // API call to update the database
       const { error } = await supabase
         .from(ENQUIRY_TABLE)
         .update({ is_read: true })
         .eq('id', enquiry.id)
 
       if (error) {
-        // If the API call fails, revert the optimistic update
         unreadEnquiries.value.push(enquiry)
         throw error
       }
@@ -132,19 +99,17 @@ export const useEnquiryStore = defineStore('enquiry', () => {
       appStore.handleError(e, 'markAsRead')
     }
   }
+
   async function markAsUnread(enquiry) {
     try {
-      // Optimistic update: remove from the UI immediately
       unreadEnquiries.value = unreadEnquiries.value.filter((e) => e.id !== enquiry.id)
 
-      // API call to update the database
       const { error } = await supabase
         .from(ENQUIRY_TABLE)
         .update({ is_read: false })
         .eq('id', enquiry.id)
 
       if (error) {
-        // If the API call fails, revert the optimistic update
         unreadEnquiries.value.push(enquiry)
         throw error
       }
@@ -161,8 +126,6 @@ export const useEnquiryStore = defineStore('enquiry', () => {
     unreadCount,
     itemsPerPageOptions,
     fetchItems,
-    subscribeToEnquiries,
-    unsubscribeFromEnquiries,
     fetchUnreadEnquiries,
     markAsRead,
     markAsUnread,

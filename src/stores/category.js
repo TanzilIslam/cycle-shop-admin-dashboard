@@ -1,7 +1,8 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { supabase } from '../lib/supabaseClient'
-import { CATEGORY_TABLE } from '../lib/dbTable'
+import { CATEGORY_TABLE } from '@/lib/dbTable'
+import { useFileManagerStore } from './fileManager'
 export const useCategoryStore = defineStore('category', () => {
   // State: stores the list of shops
   const categories = ref([])
@@ -74,8 +75,19 @@ export const useCategoryStore = defineStore('category', () => {
 
   const remove = async (id) => {
     try {
+      const { data: cat } = await supabase
+        .from(CATEGORY_TABLE)
+        .select('image_url')
+        .eq('id', id)
+        .single()
+
       const { error } = await supabase.from(CATEGORY_TABLE).delete().eq('id', id)
       if (error) throw error
+
+      if (cat?.image_url) {
+        const fileManager = useFileManagerStore()
+        await fileManager.deleteFiles(cat.image_url)
+      }
     } catch (error) {
       console.error(`Error deleting category with id ${id}:`, error.message)
       throw error
