@@ -57,7 +57,7 @@ All constants are in `src/lib/dbTable.js`. Root prefix: `store_`.
 | `CATEGORY_TABLE` | `store_categories` |
 | `PRODUCT_TABLE` | `store_products` |
 | `PRODUCT_SPECIFICATION_TABLE` | `store_product_specs` |
-| `SHOP_TABLE` | `store_shops` |
+| `USER_TABLE` | `store_users` |
 | `SPECIFICATION_SECTION_TABLE` | `store_spec_sections` |
 | `SPECIFICATION_KEY_TABLE` | `store_spec_keys` |
 | `ENQUIRY_TABLE` | `store_enquiries` |
@@ -66,9 +66,10 @@ Always import table names from `@/lib/dbTable.js` — never hardcode strings.
 
 ## Multi-Tenant Design
 
-- `store_shops.id = auth.uid()` — shop row IS the user's identity
-- On login, `user.js` calls `ensureShopExists(userId)` to upsert the shop row
-- All data tables have a `shop_id` column; RLS policies enforce `shop_id = auth.uid()`
+- `store_users.id = auth.uid()` — user row IS the tenant identity
+- On register, `user.js` inserts into `store_users` with the provided shop name
+- On login, `user.js` verifies a `store_users` row exists — blocks login if not found
+- All data tables have a `shop_id` column referencing `store_users.id`; RLS enforces `shop_id = auth.uid()`
 - No super-admin role — self-signup only
 
 ## Routing
@@ -88,14 +89,15 @@ Always import table names from `@/lib/dbTable.js` — never hardcode strings.
 - `openConfirmDialog(options)` — Promise-based confirm dialog
 
 ### `stores/user.js` — Auth
-- `loginWithEmail(email, password)` — Supabase email/password auth; calls `ensureShopExists` after login
+- `loginWithEmail(email, password)` — authenticates; verifies `store_users` row exists, blocks if not
+- `signupWithEmail(shopName, email, password)` — creates auth user + inserts `store_users` row
 - `logout()` — signs out, redirects to login
 - `fetchSession()` — restores existing session on page load
 - `isLoggedIn` — computed boolean
 
 ### `stores/shop.js` — My Shop profile
-- `fetchMyShop()` — fetches the current user's single shop row
-- `saveMyShop(data)` — upserts the shop row with `id = auth.uid()`
+- `fetchMyShop()` — fetches the current user's row from `store_users`
+- `saveMyShop(data)` — upserts the `store_users` row with `id = auth.uid()`
 
 ### Data stores (category, product, enquiry, specificationSection, specificationKey)
 Consistent CRUD interface: `fetchAll`, `fetchById`, `create`, `update`, `remove`.

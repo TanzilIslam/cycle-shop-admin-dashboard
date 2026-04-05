@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'vue-router'
-import { SHOP_TABLE } from '@/lib/dbTable'
+import { USER_TABLE } from '@/lib/dbTable'
 
 export const useUserStore = defineStore('user', () => {
   const router = useRouter()
@@ -22,24 +22,57 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  async function ensureShopExists(userId) {
-    await supabase
-      .from(SHOP_TABLE)
-      .upsert({ id: userId }, { onConflict: 'id', ignoreDuplicates: true })
-  }
-
   async function loginWithEmail(email, password) {
     loading.value = true
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    loading.value = false
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
 
-    if (error) throw error
-    user.value = data.user
-    token.value = data.session?.access_token || null
-    await ensureShopExists(data.user.id)
+      const { data: shop, error: shopError } = await supabase
+        .from(USER_TABLE)
+        .select('id')
+        .eq('id', data.user.id)
+        .maybeSingle()
+
+      if (shopError) throw shopError
+
+      if (!shop) {
+        await supabase.auth.signOut()
+        throw new Error('No store account found for this user. Please register first.')
+      }
+
+      user.value = data.user
+      token.value = data.session?.access_token || null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function signupWithEmail(shopName, email, password) {
+    loading.value = true
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password })
+      if (error) throw error
+
+      // session is null when email confirmation is required —
+      // insert would fail (anon role, no auth.uid()); user must confirm first,
+      // then come back and register again to create the store_users row.
+      if (!data.session) {
+        const err = new Error('Please check your email to confirm your account, then return here to complete registration.')
+        err.type = 'confirmation_required'
+        throw err
+      }
+
+      const { error: shopError } = await supabase
+        .from(USER_TABLE)
+        .insert({ id: data.user.id, name: shopName })
+      if (shopError) throw shopError
+
+      user.value = data.user
+      token.value = data.session.access_token
+    } finally {
+      loading.value = false
+    }
   }
 
   async function logout() {
@@ -71,6 +104,7 @@ export const useUserStore = defineStore('user', () => {
     loading,
     isLoggedIn,
     loginWithEmail,
+    signupWithEmail,
     logout,
     checkAuth,
     fetchSession,

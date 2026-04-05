@@ -2,7 +2,14 @@
   <v-container class="fill-height d-flex justify-center align-center">
     <v-card width="400" elevation="4" class="pa-4">
       <v-card-text>
-        <v-form @submit.prevent="handleLogin" ref="formRef" validate-on="submit">
+        <v-form @submit.prevent="handleRegister" ref="formRef" validate-on="submit">
+          <v-text-field
+            v-model="shopName"
+            label="Shop Name"
+            :rules="[(v) => !!v || 'Shop name is required']"
+            required
+            prepend-inner-icon="mdi-store"
+          />
           <v-text-field
             v-model="email"
             label="Email"
@@ -15,18 +22,18 @@
             v-model="password"
             label="Password"
             :type="showPassword ? 'text' : 'password'"
-            :rules="[(v) => !!v || 'Password is required']"
+            :rules="[(v) => (!!v && v.length >= 6) || 'Password must be at least 6 characters']"
             required
             prepend-inner-icon="mdi-lock"
             :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
             @click:append-inner="showPassword = !showPassword"
           />
           <v-btn :loading="userStore.loading" type="submit" color="primary" block>
-            Login
+            Create Account
           </v-btn>
           <div class="text-center mt-4 text-body-2">
-            Don't have an account?
-            <router-link :to="{ name: 'register' }" class="text-primary">Create one</router-link>
+            Already have an account?
+            <router-link :to="{ name: 'login' }" class="text-primary">Login</router-link>
           </div>
         </v-form>
       </v-card-text>
@@ -44,24 +51,22 @@ const userStore = useUserStore()
 const appStore = useAppStore()
 const router = useRouter()
 
+const shopName = ref('')
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const formRef = ref(null)
 
-const handleLogin = async () => {
+const handleRegister = async () => {
+  const { valid } = await formRef.value.validate()
+  if (!valid) return
   try {
-    await userStore.loginWithEmail(email.value, password.value)
-    appStore.showSnackbar({
-      text: 'Login successful',
-      color: 'success',
-    })
+    await userStore.signupWithEmail(shopName.value, email.value, password.value)
+    appStore.showSnackbar({ text: 'Account created successfully', color: 'success' })
     router.push({ name: 'dashboard' })
   } catch (err) {
-    appStore.showSnackbar({
-      text: err.message || 'Login failed',
-      color: 'error',
-    })
+    const color = err.type === 'confirmation_required' ? 'info' : 'error'
+    appStore.showSnackbar({ text: err.message || 'Registration failed', color })
   }
 }
 </script>

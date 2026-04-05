@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { supabase } from '../lib/supabaseClient'
-import { SHOP_TABLE } from '../lib/dbTable'
+import { USER_TABLE } from '../lib/dbTable'
 
 export const useShopStore = defineStore('shop', () => {
   const shop = ref(null)
@@ -9,7 +9,7 @@ export const useShopStore = defineStore('shop', () => {
   const fetchMyShop = async () => {
     try {
       const { data, error } = await supabase
-        .from(SHOP_TABLE)
+        .from(USER_TABLE)
         .select('*')
         .single()
       if (error && error.code !== 'PGRST116') throw error
@@ -23,7 +23,7 @@ export const useShopStore = defineStore('shop', () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       const { data, error } = await supabase
-        .from(SHOP_TABLE)
+        .from(USER_TABLE)
         .upsert({ id: user.id, ...shopData })
         .select()
         .single()

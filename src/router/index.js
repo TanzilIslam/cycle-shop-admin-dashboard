@@ -79,6 +79,11 @@ const router = createRouter({
           name: 'login',
           component: () => import('../views/auth/LoginView.vue'),
         },
+        {
+          path: 'register',
+          name: 'register',
+          component: () => import('../views/auth/RegisterView.vue'),
+        },
       ],
     },
   ],
@@ -95,7 +100,7 @@ router.beforeEach(async (to, from, next) => {
 
   if (requiresAuth && !userStore.isLoggedIn) {
     next({ name: 'login' })
-  } else if (to.name === 'login' && userStore.isLoggedIn) {
+  } else if ((to.name === 'login' || to.name === 'register') && userStore.isLoggedIn) {
     next({ name: 'dashboard' })
   } else {
     next()
