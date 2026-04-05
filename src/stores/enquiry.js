@@ -102,7 +102,7 @@ export const useEnquiryStore = defineStore('enquiry', () => {
 
   async function markAsUnread(enquiry) {
     try {
-      unreadEnquiries.value = unreadEnquiries.value.filter((e) => e.id !== enquiry.id)
+      unreadEnquiries.value = [enquiry, ...unreadEnquiries.value.filter((e) => e.id !== enquiry.id)]
 
       const { error } = await supabase
         .from(ENQUIRY_TABLE)
@@ -110,7 +110,7 @@ export const useEnquiryStore = defineStore('enquiry', () => {
         .eq('id', enquiry.id)
 
       if (error) {
-        unreadEnquiries.value.push(enquiry)
+        unreadEnquiries.value = unreadEnquiries.value.filter((e) => e.id !== enquiry.id)
         throw error
       }
     } catch (e) {
