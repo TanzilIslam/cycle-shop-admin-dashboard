@@ -286,6 +286,7 @@ const headers = [
   { title: 'Name', key: 'name' },
   { title: 'Category', key: 'store_categories.name' },
   { title: 'Price', key: 'price' },
+  { title: 'Views', key: 'view_count' },
   { title: 'Active', key: 'is_active' },
   { title: 'Action', key: 'action' },
 ]
