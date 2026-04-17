@@ -88,11 +88,42 @@
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
+                  <v-text-field label="Series" v-model="formData.series"></v-text-field>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-text-field label="Tagline" v-model="formData.tagline"></v-text-field>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-text-field label="Price Note" v-model="formData.price_note"></v-text-field>
+                </v-col>
+                <v-col cols="12" md="6">
                   <v-switch
                     label="Active"
                     v-model="formData.is_active"
                     color="primary"
                   ></v-switch>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-combobox
+                    label="Colors"
+                    v-model="formData.colors"
+                    multiple
+                    chips
+                    closable-chips
+                    hint="Type a color and press Enter"
+                    persistent-hint
+                  ></v-combobox>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-combobox
+                    label="Key Features"
+                    v-model="formData.key_features"
+                    multiple
+                    chips
+                    closable-chips
+                    hint="Type a feature and press Enter"
+                    persistent-hint
+                  ></v-combobox>
                 </v-col>
                 <v-col cols="12">
                   <v-textarea
@@ -309,8 +340,13 @@ const getInitialFormData = () => ({
   category_id: null,
   name: '',
   slug: '',
+  series: '',
+  tagline: '',
   price: 0,
+  price_note: '',
   description: '',
+  colors: [],
+  key_features: [],
   images: [],
   videos: [],
   is_active: true,
@@ -441,8 +477,13 @@ onMounted(async () => {
       category_id: p.category_id,
       name: p.name,
       slug: p.slug,
+      series: p.series ?? '',
+      tagline: p.tagline ?? '',
       price: p.price,
+      price_note: p.price_note ?? '',
       description: p.description,
+      colors: p.colors ?? [],
+      key_features: p.key_features ?? [],
       images: p.images ?? [],
       videos: p.videos ?? [],
       is_active: p.is_active,
